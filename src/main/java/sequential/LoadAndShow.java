@@ -1,4 +1,4 @@
-package hadoop;
+package sequential;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

@@ -1,14 +1,11 @@
-package hadoop;
+package sequential;
 
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.plugin.GaussianBlur3D;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.sql.*;
 import java.util.Arrays;
 
@@ -67,7 +64,7 @@ public class TestJavaImage {
 
                 // construct a 3D image, in the form of an ImageStack object
                 ImageStack imgStack = new ImageStack(width, height, depth);
-                for (int iz = 0 ; iz < depth; iz++) {
+                for (int iz = 0; iz < depth; iz++) {
                     byte[] slicePixels = Arrays.copyOfRange(pix, iz * width * height, (iz + 1) * width * height);
                     imgStack.setPixels(slicePixels, iz + 1);
                 }

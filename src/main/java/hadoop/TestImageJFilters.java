@@ -1,22 +1,30 @@
 package hadoop;
 
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.plugin.GaussianBlur3D;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.*;
+import java.util.Arrays;
 
 public class TestImageJFilters {
 
     public static class QueryDBMapper
-            extends Mapper<Object, Text, Text, IntWritable> {
+            extends Mapper<Object, Text, NullWritable, NullWritable> {
 
         private double sigmaX, sigmaY, sigmaZ;
 
@@ -35,9 +43,6 @@ public class TestImageJFilters {
                 conn = DriverManager.getConnection(url);
                 System.out.println("Connection to SQLite has been established.");
 
-//                Statement stmt = conn.createStatement();
-//                ResultSet rs = stmt.executeQuery(" select image_id, zoom_out, x, y, z, x_dim, y_dim, z_dim, pixels from pix where image_id = 1 and zoom_out=1 and x >= 0 - x_dim and x <= 128");
-
                 // get the info about the pixels of interest
                 String[] info = value.toString().split(",");
                 int imageID = Integer.parseInt(info[0]);
@@ -48,19 +53,18 @@ public class TestImageJFilters {
                 int width = Integer.parseInt(info[5]);
                 int height = Integer.parseInt(info[6]);
                 int depth = Integer.parseInt(info[7]);
-//                System.out.println("imageID: " + imageID);
-//                System.out.println("zoomOut: " + zoomOut);
-//                System.out.println("x: " + xStart + ", " + (xStart + width));
-//                System.out.println("y: " + yStart + ", " + (yStart + height));
-//                System.out.println("z: " + zStart + ", " + (zStart + depth));
+                System.out.println("imageID: " + imageID);
+                System.out.println("zoomOut: " + zoomOut);
+                System.out.println("x: " + xStart + ", " + (xStart + width));
+                System.out.println("y: " + yStart + ", " + (yStart + height));
+                System.out.println("z: " + zStart + ", " + (zStart + depth));
 
-                // query the pixels between upper-left-index and lower-right-index
-                // SELECT x, y, z from pix where image_id = 1 and zoom_out = 1 and x >= -128 and x <= 0 and y >= 2176 and y <= 2304 and z >= 0 and z <= 64 order by z, y, x;
+                // SELECT x, y, z from pix where image_id = 1 and zoom_out = 1 and x > 640 and x < 896 and y > 384 and y < 640 and z > -64 and z < 64 order by z, y, x;
                 String sqlSelectPix = "SELECT x, y, z, x_dim, y_dim, z_dim, pixels from pix " +
                         "where image_id = ? and zoom_out = ? " +
-                        "and x >= ? - x_dim and x <= ? " +
-                        "and y >= ? - y_dim and y <= ? " +
-                        "and z >= ? - z_dim and z <= ? order by z, y, x";
+                        "and x > ? - x_dim and x < ? " +
+                        "and y > ? - y_dim and y < ? " +
+                        "and z > ? - z_dim and z < ? order by z, y, x";
                 PreparedStatement ps = conn.prepareStatement(sqlSelectPix);
                 int i = 1;
                 ps.setInt(i++, imageID);
@@ -73,35 +77,34 @@ public class TestImageJFilters {
                 ps.setInt(i, zStart + depth);
                 ResultSet rs = ps.executeQuery();
 
-                byte[] pix;
-                while (rs.next()) {
+                byte[] pix = null;
+                if (rs.next()) { // TODO: process multiple blobs, i.e., use while(...) instead of if(...)
                     pix = rs.getBytes("pixels");
                     System.out.println("x_dim = " + rs.getInt("x_dim"));
                 }
-//
-//                // construct a 3D image and apply filter
-//                // TODO: transform pixel into image object that ImageJ can process
-//                ImageStack imstck = new ImageStack(xDim, yDim, zDim);
-//                for (int iz = 0 ; iz < zDim; iz++) {
-//                    for (int iy = 0 ; iy < yDim; iy++) {
-//                        for (int ix = 0 ; ix < xDim ; ix++) {
-//                            double voxel = pix[iz * xDim * yDim + iy * xDim + ix];
-//                            imstck.setVoxel(ix, iy, iz, voxel);
-//                        }
-//                    }
-//                }
-//                ImagePlus imp = new ImagePlus("pix", imstck);
-//                GaussianBlur3D.blur(imp, sigmaX, sigmaY, sigmaZ);
+                assert(pix != null);
+
+                // construct a 3D image, in the form of an ImageStack object
+                ImageStack imgStack = new ImageStack(width, height, depth);
+                for (int iz = 0; iz < depth; iz++) {
+                    byte[] slicePixels = Arrays.copyOfRange(pix, iz * width * height, (iz + 1) * width * height);
+                    imgStack.setPixels(slicePixels, iz + 1);
+                }
+
+                // apply filter
+                ImagePlus imgPlus = new ImagePlus("pix", imgStack);
+                GaussianBlur3D.blur(imgPlus, sigmaX, sigmaY, sigmaZ);
 
                 // write results back
                 byte[] pixRes = new byte[width * height * depth];
-//                for (int iz = 0 ; iz < zDim; iz++) {
-//                    for (int iy = 0 ; iy < yDim; iy++) {
-//                        for (int ix = 0 ; ix < xDim ; ix++) {
-//                            pixRes[iz * xDim * yDim + iy * xDim + ix] = (byte) imp.getStack().getVoxel(ix, iy, iz);
-//                        }
-//                    }
-//                }
+                for (int iz = 0; iz < depth; iz++) {
+                    for (int iy = 0; iy < height; iy++) {
+                        for (int ix = 0; ix < width; ix++) {
+                            pixRes[iz * width * height + iy * width + ix] = (byte)(imgPlus.getStack().getVoxel(ix, iy, iz));
+                        }
+                    }
+                }
+                System.out.println("result size = " + pixRes.length);
 
                 String sqlInsertPix = "insert into pix (image_id, name, zoom_out, x, y, z, x_dim, y_dim, z_dim, pixels) " +
                         "Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -132,22 +135,6 @@ public class TestImageJFilters {
                     System.out.println(ex.getMessage());
                 }
             }
-
-            context.write(new Text("connected to db"), new IntWritable(1));
-        }
-    }
-
-    public static class WriteToDBReducer
-            extends Reducer<Text,IntWritable,Text,IntWritable> {
-
-        public void reduce(Text key, Iterable<IntWritable> values,
-                           Context context
-        ) throws IOException, InterruptedException {
-            int sum = 0;
-            for (IntWritable val : values) {
-                sum += val.get();
-            }
-            context.write(key, new IntWritable(sum));
         }
     }
 
@@ -156,11 +143,10 @@ public class TestImageJFilters {
         Job job = Job.getInstance(conf, "Reflection (MatLab jar) in Hadoop");
         job.setJarByClass(TestImageJFilters.class);
         job.setMapperClass(QueryDBMapper.class);
-        job.setCombinerClass(WriteToDBReducer.class);
-        job.setReducerClass(WriteToDBReducer.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
-        FileInputFormat.addInputPath(job, new Path(args[0]));
+        job.setNumReduceTasks(0);
+        job.setOutputKeyClass(NullWritable.class);
+        job.setOutputValueClass(NullWritable.class);
+        NLineInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
