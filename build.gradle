@@ -17,6 +17,7 @@ dependencies {
     compile 'org.apache.hadoop:hadoop-mapreduce-client-jobclient:2.8.+'
     //compile group: 'net.imagej', name: 'ij', version: '1.52b'
     compile files("/home/rundongli/LabWork/nctracer-related/ImageJ/ij.jar")
+    compile group: 'org.hdfgroup', name: 'hdf-java', version: '2.6.1'
     runtime 'org.xerial:sqlite-jdbc:3.+'
 }
 
