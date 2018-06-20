@@ -9,6 +9,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
@@ -23,13 +24,25 @@ public class BatchImageJFilters {
 
         private double sigmaX, sigmaY, sigmaZ;
 
-        protected void setup(Context c) {
+        protected void setup(Context c) throws IOException, InterruptedException {
+            System.out.println("mapper setup");
             sigmaX = c.getConfiguration().getDouble("sigmax", 1.0);
             sigmaY = c.getConfiguration().getDouble("sigmay", 1.0);
             sigmaZ = c.getConfiguration().getDouble("sigmaz", 1.0);
+
+            String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
+            System.out.println("file path: " + filePathString);
+
+            String[] inputlocations = c.getInputSplit().getLocations();
+            System.out.println(" input locations length: " + inputlocations.length);
+            for (String str : inputlocations) {
+                System.out.println(" input split location: " + str);
+            }
+            System.out.println(" sigma values: " + sigmaX + "," + sigmaY + "," + sigmaZ);
         }
 
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            System.out.println("map function");
             // interpret the image data: meta-info (x,y,z,dims) and pixels
 
             // get the meta-info
@@ -77,7 +90,7 @@ public class BatchImageJFilters {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        Job job = Job.getInstance(conf, "Reflection (MatLab jar) in Hadoop");
+        Job job = Job.getInstance(conf, "Batch ImageJ Filter (Query DataBase) in Hadoop");
         job.setJarByClass(BatchImageJFilters.class);
         job.setMapperClass(QueryDBMapper.class);
         job.setNumReduceTasks(0);

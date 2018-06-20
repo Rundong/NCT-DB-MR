@@ -4,6 +4,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 
 import javax.imageio.ImageIO;
@@ -35,7 +36,6 @@ public class UploadJpegToHDFS {
                 System.err.println("Directory " + hdfsPath + " already exists!");
                 return;
             }
-            SequenceFile.Writer writer;
 
             for (final File jpegFile : Objects.requireNonNull(folder.listFiles())) {
                 // load each jpeg file in the folder
@@ -60,12 +60,15 @@ public class UploadJpegToHDFS {
                 for (int i = 0; i < pixels.length; i++) {
                     pixelsWritable[i] = new ByteWritable(pixels[i]);
                 }
+                System.out.println("num of pixels: " + pixels.length);
 
                 // write this pixel array to HDFS
+                SequenceFile.Writer writer;
                 Path path = new Path(hdfsPath + "/" + strTile);
                 writer = SequenceFile.createWriter(conf, SequenceFile.Writer.file(path),
                         SequenceFile.Writer.keyClass(PixelKey.class), SequenceFile.Writer.valueClass(PixelArrayWritable.class));
                 writer.append(pixelKey, new PixelArrayWritable(pixelsWritable));
+                IOUtils.closeStream(writer);
             }
         } catch (IOException e) {
             e.printStackTrace();
