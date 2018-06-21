@@ -3,9 +3,10 @@ package hadoop.ImageFormat;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.ByteWritable;
 
-@SuppressWarnings("WeakerAccess")
-public class PixelArrayWritable extends ArrayWritable {
+import java.io.Serializable;
 
+@SuppressWarnings("WeakerAccess")
+public class PixelArrayWritable extends ArrayWritable implements Serializable {
 
     public PixelArrayWritable(ByteWritable[] values) {
         super(ByteWritable.class, values);

@@ -8,6 +8,8 @@ import ij.plugin.GaussianBlur3D;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -19,6 +21,10 @@ import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import java.io.IOException;
+
+/**
+ * For unknown reason, map function does not run, although the setup function runs.
+ */
 
 public class BatchHdfsImageJFilters {
 
@@ -34,7 +40,7 @@ public class BatchHdfsImageJFilters {
             sigmaZ = c.getConfiguration().getDouble("sigmaz", 1.0);
 
             String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
-            System.out.println("file path: " + filePathString);
+            System.out.println(" file path: " + filePathString);
 //            String[] inputlocations = c.getInputSplit().getLocations();
 //            System.out.println(" input locations length: " + inputlocations.length);
 //            for (String str : inputlocations) {
@@ -86,27 +92,43 @@ public class BatchHdfsImageJFilters {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
+        conf.set("io.serializations",
+                "org.apache.hadoop.io.serializer.JavaSerialization,org.apache.hadoop.io.serializer.WritableSerialization");
         conf.setDouble("sigmax", 1.0);
         conf.setDouble("sigmay", 0.9);
         conf.setDouble("sigmaz", 1.0);
         Job job = Job.getInstance(conf, "Batch ImageJ filter in Hadoop (HDFS)");
         job.setJarByClass(BatchHdfsImageJFilters.class);
+
         job.setMapperClass(BatchHdfsMapper.class);
-        job.setMapOutputKeyClass(PixelKey.class);
-        job.setMapOutputValueClass(PixelArrayWritable.class);
-        job.setNumReduceTasks(0);
-        job.setOutputKeyClass(PixelKey.class);
-        job.setOutputValueClass(PixelArrayWritable.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(BytesWritable.class);
 
         job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        System.out.println("intput file: " + args[0]);
-
         FileInputFormat.addInputPath(job, new Path(args[0]));
-//        MultipleInputs.addInputPath(job, new Path(args[0]), SequenceFileInputFormat.class, BatchHdfsMapper.class);
-//        MapFileOutputFormat.setOutputPath(job, new Path(args[1]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
         System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+//        job.setMapperClass(BatchHdfsMapper.class);
+//        job.setMapOutputKeyClass(PixelKey.class);
+//        job.setMapOutputValueClass(PixelArrayWritable.class);
+//        job.setNumReduceTasks(0);
+//        job.setOutputKeyClass(PixelKey.class);
+//        job.setOutputValueClass(PixelArrayWritable.class);
+//
+//        job.setInputFormatClass(SequenceFileInputFormat.class);
+//        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+//
+//        System.out.println("intput file: " + args[0]);
+//
+//        FileInputFormat.addInputPath(job, new Path(args[0]));
+////        MultipleInputs.addInputPath(job, new Path(args[0]), SequenceFileInputFormat.class, BatchHdfsMapper.class);
+////        MapFileOutputFormat.setOutputPath(job, new Path(args[1]));
+//        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+//        System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 }
