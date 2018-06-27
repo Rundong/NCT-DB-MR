@@ -1,9 +1,9 @@
 package hadoop.wholefile;
 
-import hadoop.BatchSequenceFilter;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.plugin.GaussianBlur3D;
+import ij.plugin.ImagesToStack;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
@@ -13,48 +13,59 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.color.ColorSpace;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Arrays;
 
-public class WholeImageFilterImageJ {
+public class WholeImageFilterWriteDB {
 
     public static class WholeImageFilterMapper extends
-            Mapper<NullWritable, BytesWritable, Text, BytesWritable> {
+            Mapper<NullWritable, BytesWritable, NullWritable, NullWritable> {
 
         private double sigmaX, sigmaY, sigmaZ;
         private Text fileNameKey;
+        Connection conn = null;
 
-        protected void setup(Context c) throws IOException, InterruptedException {
+        @Override
+        protected void setup(Context c) {
             //System.out.println("mapper setup");
             sigmaX = c.getConfiguration().getDouble("sigmax", 1.0);
             sigmaY = c.getConfiguration().getDouble("sigmay", 1.0);
             sigmaZ = c.getConfiguration().getDouble("sigmaz", 1.0);
-
-            String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
-            System.out.println(" file path: " + filePathString);
-            fileNameKey = new Text(filePathString);
-//            String[] inputlocations = c.getInputSplit().getLocations();
-//            System.out.println(" input locations length: " + inputlocations.length);
-//            for (String str : inputlocations) {
-//                System.out.println(" input split location: " + str);
-//            }
             //System.out.println(" sigma values: " + sigmaX + "," + sigmaY + "," + sigmaZ);
+
+            // obtain the file path
+            String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
+            System.out.println("Input file path: " + filePathString);
+            fileNameKey = new Text(filePathString);
+
+            // initialize db connection
+            String url = "jdbc:sqlite:/home/rundongli/LabWork/nctracer-related/nctracer.db";
+            try {
+                // create a connection to the database
+                conn = DriverManager.getConnection(url);
+                System.out.println(" Connection to SQLite has been established.");
+            } catch (SQLException e) {
+                System.err.println(e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
         }
 
         @Override
         public void map(NullWritable key, BytesWritable value, Context context)
-                throws IOException, InterruptedException {
+                throws IOException {
             //System.out.println("map function: key = " + key.toString() + ", image byte length = " + value.getLength());
 
             // interpret the image data: meta-info (x,y,z,dims) and pixels
@@ -89,9 +100,13 @@ public class WholeImageFilterImageJ {
             // apply filter
             ImagePlus imgPlus = new ImagePlus("pix", imgStack);
             GaussianBlur3D.blur(imgPlus, sigmaX, sigmaY, sigmaZ);
+            //System.out.println(" done filtering");
 
             // convert 3D array into 1D array
             byte[] pixRes = new byte[zDim * sliceSize];
+            //System.out.println(" pixel length = " + pixRes.length);
+            /*byte[][] imgArray = (byte[][]) (imgPlus.getStack().getImageArray());
+            System.out.println(" obtained slices");*/
             for (int iz = 0; iz < zDim; iz++) {
                 /*System.out.print(" slice " + iz + ": ");
                 System.arraycopy(imgArray[iz], 0, pixRes, iz * sliceSize, sliceSize);*/
@@ -104,27 +119,44 @@ public class WholeImageFilterImageJ {
             }
             System.out.println(" done converting filtered image into 1D pixel array");
 
-            // convert filtered 3D image to 1D image
-            DataBuffer buffer = new DataBufferByte(pixRes, pixRes.length);
-            WritableRaster raster = Raster.createInterleavedRaster(buffer,
-                    xDim, yDim * zDim, xDim, 1, new int[]{0}, null);
-            ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-            ColorModel cm = new ComponentColorModel(cs, false, true,
-                    Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-            BufferedImage bufImgRes = new BufferedImage(cm, raster, false, null);
-            System.out.println(" done constructing buffered image result");
+            try {
+                // write results to DB
+                String sqlInsertPix = "insert into pix (image_id, name, zoom_out, x, y, z, x_dim, y_dim, z_dim, pixels) " +
+                        "Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement ps = conn.prepareStatement(sqlInsertPix);
+                int i = 1;
+                ps.setInt(i++, 2); // hard code image_id = 2, just for testing
+                ps.setString(i++, path[path.length - 1].split(".jpg")[0]);
+                ps.setInt(i++, 1); // filter should always be applied to zoom out level 1, i.e., original images
+                ps.setInt(i++, x);
+                ps.setInt(i++, y);
+                ps.setInt(i++, z);
+                ps.setInt(i++, xDim);
+                ps.setInt(i++, yDim);
+                ps.setInt(i++, zDim);
+                ps.setBytes(i, pixRes);
+                ps.executeUpdate();
+                System.out.println(" finish writing filtered stack " + path[path.length - 1]);
 
-            // write result image back to jpeg byte array
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ImageIO.write(bufImgRes, "jpg", baos);
-            baos.flush();
-            byte[] imageInByte = baos.toByteArray();
-            baos.close();
-
-            context.write(fileNameKey, new BytesWritable(imageInByte));
-            System.out.println(" num bytes: " + imageInByte.length);
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
 
         }//map function close
+
+        @Override
+        protected void cleanup(Context c) {
+            try {
+                System.out.println(" conn: " + conn.toString());
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
 
     }//SequenceImageFilterMapper close
 
@@ -133,14 +165,14 @@ public class WholeImageFilterImageJ {
         conf.setDouble("sigmax", 1.0);
         conf.setDouble("sigmay", 0.9);
         conf.setDouble("sigmaz", 1.0);
-        Job job = Job.getInstance(conf, "WholeImageFilterImageJ");
-        job.setJarByClass(WholeImageFilterImageJ.class);
+        Job job = Job.getInstance(conf, "WholeImageFilterWriteDB");
+        job.setJarByClass(WholeImageFilterWriteDB.class);
 
         job.setMapperClass(WholeImageFilterMapper.class);
         job.setNumReduceTasks(0);
 
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(BytesWritable.class);
+        job.setOutputKeyClass(NullWritable.class);
+        job.setOutputValueClass(NullWritable.class);
 
         job.setInputFormatClass(WholeFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
