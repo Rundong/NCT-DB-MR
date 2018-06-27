@@ -3,7 +3,6 @@ package hadoop.wholefile;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.plugin.GaussianBlur3D;
-import ij.plugin.ImagesToStack;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
@@ -15,6 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.sqlite.JDBC;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -51,16 +51,20 @@ public class WholeImageFilterWriteDB {
             fileNameKey = new Text(filePathString);
 
             // initialize db connection
-            String url = "jdbc:sqlite:/home/rundongli/LabWork/nctracer-related/nctracer.db";
             try {
                 // create a connection to the database
+                //Class.forName("org.sqlite.JDBC");
+                DriverManager.registerDriver(new JDBC());
+                String url = "jdbc:sqlite:/home/rundongli/LabWork/nctracer-related/nctracer.db";
                 conn = DriverManager.getConnection(url);
                 System.out.println(" Connection to SQLite has been established.");
             } catch (SQLException e) {
                 System.err.println(e.getMessage());
                 e.printStackTrace();
                 System.exit(1);
-            }
+            } /*catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }*/
         }
 
         @Override
