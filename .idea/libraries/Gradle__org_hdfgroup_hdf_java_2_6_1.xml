@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.hdfgroup:hdf-java:2.6.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.hdfgroup/hdf-java/2.6.1/8e570d586a1458676949eb1f54ae79ecd161ffa0/hdf-java-2.6.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.hdfgroup/hdf-java/2.6.1/54dc47738a43fa49fc291c24ca88a5d3bf0fb72a/hdf-java-2.6.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

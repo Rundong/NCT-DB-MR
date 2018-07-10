@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="WholeImageFilterImageJ">
+    <output-path>$PROJECT_DIR$/out/artifacts/WholeImageFilterImageJ</output-path>
+    <root id="archive" name="WholeImageFilterImageJ.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/out/mf-WholeImageFilterImageJ/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="MRnctracerdb_main" />
+      <element id="extracted-dir" path="$USER_HOME$/Softwares/ij.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

@@ -130,9 +130,12 @@ public class WholeImageFilterImageJ {
 
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.setDouble("sigmax", 1.0);
-        conf.setDouble("sigmay", 0.9);
-        conf.setDouble("sigmaz", 1.0);
+        double sigmaX = Double.parseDouble(args[2]);
+        double sigmaY = Double.parseDouble(args[3]);
+        double sigmaZ = Double.parseDouble(args[4]);
+        conf.setDouble("sigmax", sigmaX);
+        conf.setDouble("sigmay", sigmaY);
+        conf.setDouble("sigmaz", sigmaZ);
         Job job = Job.getInstance(conf, "WholeImageFilterImageJ");
         job.setJarByClass(WholeImageFilterImageJ.class);
 
