@@ -8,22 +8,14 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar:///home/rundongli/LabWork/nctracer-related/ImageJ/ij.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-common:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-mapreduce-client-jobclient:2.8.4" level="project" />
+    <orderEntry type="library" name="Gradle: net.imagej:ij:1.52d" level="project" />
     <orderEntry type="library" name="Gradle: org.hdfgroup:hdf-java:2.6.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.xerial:sqlite-jdbc:3.23.1" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-mapreduce-client-shuffle:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-mapreduce-client-common:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-yarn-client:2.8.4" level="project" />
-    <orderEntry type="library" scope="RUNTIME" name="Gradle: org.xerial:sqlite-jdbc:3.23.1" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-mapreduce-client-core:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-yarn-server-nodemanager:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-yarn-server-common:2.8.4" level="project" />
