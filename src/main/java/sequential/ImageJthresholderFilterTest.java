@@ -4,7 +4,6 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
-import ij.plugin.filter.FFTFilter;
 import ij.process.ImageProcessor;
 
 import javax.imageio.ImageIO;
@@ -13,15 +12,14 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
 import java.io.File;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class ImageJfftFilterTest extends JPanel  {
+public class ImageJthresholderFilterTest extends JPanel  {
 
     BufferedImage image;
     Dimension size = new Dimension();
 
-    public ImageJfftFilterTest(BufferedImage image) {
+    public ImageJthresholderFilterTest(BufferedImage image) {
         this.image = image;
         size.setSize(image.getWidth(), image.getHeight());
     }
@@ -57,13 +55,14 @@ public class ImageJfftFilterTest extends JPanel  {
         // apply filter
         ImagePlus imgPlus = new ImagePlus("pix", imgStack);
 
-        ImageJfftFilter fftFilter = new ImageJfftFilter();
-        fftFilter.setup("arg?", imgPlus);
-        for (int slice = 1; slice <= zDim; slice++) {
-//            ImageProcessor ip = imgStack.getProcessor(slice);
-            ImageProcessor ip = imgPlus.getProcessor();
-            fftFilter.run(ip);
-        }
+//        ij.process.ImageStatistics.getStatistics(ip);
+//        ij.plugin.Thresholder thresholder = new ij.plugin.Thresholder();
+//        thresholder.run();
+        IJ.run(imgPlus, "HSB Stack", "");
+        imgPlus.setSlice(2);
+        IJ.setAutoThreshold(imgPlus, "Triangle dark");
+        Prefs.blackBackground = true;
+        IJ.run(imgPlus, "Convert to Mask", "only");
 
         // convert 3D array into 1D array
         byte[] pixRes = new byte[zDim * sliceSize];
@@ -90,58 +89,19 @@ public class ImageJfftFilterTest extends JPanel  {
         System.out.println(" done constructing buffered image result");
 
         // save image
-        File outputfile = new File("./testData/fft-result-last3slices.jpg");
+        File outputfile = new File("./testData/thresholder-result-last3slices.jpg");
         ImageIO.write(bufImgRes, "jpg", outputfile);
-    }
-
-    public static void applyTo2D() throws Exception {
-//        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
-//        BufferedImage bufImg = ImageIO.read(new File(path));
-//
-//        // crop and save original image
-//        bufImg = bufImg.getSubimage(0, 8064, 128, 128);
-//        File outputOriginal = new File("./testData/original-subimage.jpg");
-//        ImageIO.write(bufImg, "jpg", outputOriginal);
-
-        String path = "./testData/original-subimage.jpg";
-        BufferedImage bufImg = ImageIO.read(new File(path));
-
-        // apply filter
-        ImagePlus imgPlus = new ImagePlus("2D", bufImg);
-        ImageProcessor ip = imgPlus.getProcessor();
-        ImageJfftFilter fftFilter = new ImageJfftFilter();
-        fftFilter.setup("arg?", imgPlus);
-        fftFilter.filter(ip);
-//        FFTFilter fftFilter = new FFTFilter();
-//        fftFilter.setup("ijFFTarg?", imgPlus);
-//        fftFilter.run(ip);
-
-        BufferedImage bufImgRes = imgPlus.getBufferedImage();
-        System.out.println(" done constructing buffered image result");
-
-        // save image
-        File outputfile = new File("./testData/fft-result.jpg");
-        ImageIO.write(bufImgRes, "jpg", outputfile);
-
-//        // show the result
-//        ImageJfftFilterTest test = new ImageJfftFilterTest(bufImgRes);
-//        JFrame f = new JFrame();
-//        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        f.add(new JScrollPane(test));
-//        f.setSize(400,400);
-//        f.setLocation(200,200);
-//        f.setVisible(true);
     }
 
     public static void main(String[] args) throws Exception {
         applyTo3D();
 //        applyTo2D();
 
-        // crop and save original image
+//        // crop and save original image
 //        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
 //        BufferedImage bufImg = ImageIO.read(new File(path));
-//        bufImg = bufImg.getSubimage(0, 7808, 128, 384);
-//        File outputOriginal = new File("./testData/original-subimage-last3slices.jpg");
+//        bufImg = bufImg.getSubimage(0, 7808, 128, 256);
+//        File outputOriginal = new File("./testData/original-subimage-last2slices.jpg");
 //        ImageIO.write(bufImg, "jpg", outputOriginal);
     }
 
