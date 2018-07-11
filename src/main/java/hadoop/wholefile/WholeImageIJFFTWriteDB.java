@@ -15,6 +15,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
 import org.sqlite.JDBC;
 import sequential.ImageJfftFilter;
 
@@ -44,9 +45,12 @@ public class WholeImageIJFFTWriteDB {
         protected void setup(Context c) {
             //System.out.println("mapper setup");
             fftFilter = new ImageJfftFilter();
-            fftFilter.filterLargeDia = c.getConfiguration().getDouble("largeDia", 40.1);
-            fftFilter.filterSmallDia = c.getConfiguration().getDouble("smallDia", 3.0);
-            fftFilter.choiceDia = c.getConfiguration().get("choiceDia", "None");
+            ImageJfftFilter.filterLargeDia = c.getConfiguration().getDouble("largeDia", 40.1);
+            ImageJfftFilter.filterSmallDia = c.getConfiguration().getDouble("smallDia", 3.0);
+            ImageJfftFilter.choiceDia = c.getConfiguration().get("choiceDia", "None");
+            ImageJfftFilter.toleranceDia = c.getConfiguration().getDouble("toleranceDia", 5.0);
+            ImageJfftFilter.doScalingDia = c.getConfiguration().getBoolean("doScalingDia", true);
+            ImageJfftFilter.saturateDia = c.getConfiguration().getBoolean("saturateDia", true);
 
             // obtain the file path
             String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
@@ -110,6 +114,7 @@ public class WholeImageIJFFTWriteDB {
             ImagePlus imgPlus = new ImagePlus("pix", imgStack);
             fftFilter.setup("FFT-arg", imgPlus);
             for (int slice = 1; slice <= zDim; slice++) {
+                imgPlus.setSlice(slice);
                 ImageProcessor ip = imgPlus.getProcessor();
                 fftFilter.run(ip);
             }
@@ -174,15 +179,24 @@ public class WholeImageIJFFTWriteDB {
     }//SequenceImageFilterMapper close
 
     public static void main(String[] args) throws Exception {
-        double largeDia = Double.parseDouble(args[2]);
-        String jdbcURL = args[5];
-        int image_id = Integer.parseInt(args[6]);
-        String image_name = args[7];
-
         Configuration conf = new Configuration();
-        conf.setDouble("largeDia", largeDia);
-        conf.set("jdbcURL", jdbcURL);
+        String extraArgs[] = new GenericOptionsParser(conf, args).getRemainingArgs();
+        if (extraArgs.length != 9) {
+            System.err.println("There should be 6 filter parameters and 3 database arguments.");
+        }
+        conf.setDouble("largeDia", Double.parseDouble(args[2]));
+        conf.setDouble("smallDia", Double.parseDouble(args[3]));
+        conf.set("choiceDia", args[4]);
+        conf.setDouble("toleranceDia", Double.parseDouble(args[5]));
+        conf.setDouble("doScalingDia", Double.parseDouble(args[6]));
+        conf.setDouble("saturateDia", Double.parseDouble(args[7]));
+        int image_id = Integer.parseInt(args[8]);
+        String image_name = args[9];
+        String jdbcURL = args[10];
         conf.setInt("imageID", image_id);
+        conf.set("imageName", image_name);
+        conf.set("jdbcURL", jdbcURL);
+
         Job job = Job.getInstance(conf, "WholeImage-IJ_FFT-WriteDB");
         job.setJarByClass(WholeImageIJFFTWriteDB.class);
 

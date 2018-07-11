@@ -16,28 +16,26 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-public class ImageJfftFilterTest extends JPanel  {
+public class ImageJfftFilterTest  {
 
-    BufferedImage image;
-    Dimension size = new Dimension();
-
-    public ImageJfftFilterTest(BufferedImage image) {
-        this.image = image;
-        size.setSize(image.getWidth(), image.getHeight());
+    public static void callMyFFT(ImagePlus imgPlus, int zDim) {
+        ImageJfftFilter fftFilter = new ImageJfftFilter();
+        fftFilter.setup("arg?", imgPlus);
+//        fftFilter.run(imgPlus.getProcessor());
+        for (int slice = 1; slice <= zDim; slice++) {
+//            imgPlus.setPosition(slice); // the same effect as setSlice()
+            imgPlus.setSlice(slice); // the same effect as setPosition()
+            ImageProcessor ip = imgPlus.getProcessor();
+            fftFilter.run(ip);
+        }
     }
 
-    /**
-     * Drawing an image can allow for more
-     * flexibility in processing/editing.
-     */
-    protected void paintComponent(Graphics g) {
-        // Center image in this component.
-        int x = (getWidth() - size.width)/2;
-        int y = (getHeight() - size.height)/2;
-        g.drawImage(image, x, y, this);
+    public static void callIJFFT(ImagePlus imgPlus, int zDim) {
+        FFTFilter ijFFT = new FFTFilter();
+        String args = "filterLargeDia=40 filterSmallDia=10 processStack";
+        ijFFT.setup(args, imgPlus);
+        ijFFT.run(imgPlus.getProcessor());
     }
-
-    public Dimension getPreferredSize() { return size; }
 
     public static void applyTo3D() throws Exception {
 //        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
@@ -56,14 +54,8 @@ public class ImageJfftFilterTest extends JPanel  {
 
         // apply filter
         ImagePlus imgPlus = new ImagePlus("pix", imgStack);
-
-        ImageJfftFilter fftFilter = new ImageJfftFilter();
-        fftFilter.setup("arg?", imgPlus);
-        for (int slice = 1; slice <= zDim; slice++) {
-//            ImageProcessor ip = imgStack.getProcessor(slice);
-            ImageProcessor ip = imgPlus.getProcessor();
-            fftFilter.run(ip);
-        }
+//        callIJFFT(imgPlus, zDim);
+        callMyFFT(imgPlus, zDim);
 
         // convert 3D array into 1D array
         byte[] pixRes = new byte[zDim * sliceSize];
@@ -90,7 +82,7 @@ public class ImageJfftFilterTest extends JPanel  {
         System.out.println(" done constructing buffered image result");
 
         // save image
-        File outputfile = new File("./testData/fft-result-last3slices.jpg");
+        File outputfile = new File("./testData/myfft-result-last3slices.jpg");
         ImageIO.write(bufImgRes, "jpg", outputfile);
     }
 
