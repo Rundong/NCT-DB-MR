@@ -28,7 +28,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
 
-public class WholeImageFilterWriteDB {
+public class WholeImageIJgaussianWriteDB {
 
     public static class WholeImageFilterMapper extends
             Mapper<NullWritable, BytesWritable, NullWritable, NullWritable> {
@@ -36,6 +36,7 @@ public class WholeImageFilterWriteDB {
         private double sigmaX, sigmaY, sigmaZ;
         private Text fileNameKey;
         Connection conn = null;
+        private int image_id;
 
         @Override
         protected void setup(Context c) {
@@ -43,6 +44,7 @@ public class WholeImageFilterWriteDB {
             sigmaX = c.getConfiguration().getDouble("sigmax", 1.0);
             sigmaY = c.getConfiguration().getDouble("sigmay", 1.0);
             sigmaZ = c.getConfiguration().getDouble("sigmaz", 1.0);
+            image_id = c.getConfiguration().getInt("imageID", 99);
             //System.out.println(" sigma values: " + sigmaX + "," + sigmaY + "," + sigmaZ);
 
             // obtain the file path
@@ -55,7 +57,8 @@ public class WholeImageFilterWriteDB {
                 // create a connection to the database
                 //Class.forName("org.sqlite.JDBC");
                 DriverManager.registerDriver(new JDBC());
-                String url = "jdbc:sqlite:/home/rundongli/LabWork/nctracer-related/nctracer.db";
+                //String url = "jdbc:sqlite:/home/rundongli/LabWork/nctracer-related/nctracer.db";
+                String url = c.getConfiguration().get("jdbcURL");
                 conn = DriverManager.getConnection(url);
                 System.out.println(" Connection to SQLite has been established.");
             } catch (SQLException e) {
@@ -97,8 +100,8 @@ public class WholeImageFilterWriteDB {
             byte[] pixels = ((DataBufferByte) bufImg.getRaster().getDataBuffer()).getData();
             System.out.println(" obtained pixels from buffered image");
             ImageStack imgStack = new ImageStack(xDim, yDim, zDim);
-            for (int iz = 1; iz <= zDim; iz++) {
-                imgStack.setPixels(Arrays.copyOfRange(pixels, iz * sliceSize, (iz + 1) * sliceSize), iz);
+            for (int iz = 0; iz < zDim; iz++) {
+                imgStack.setPixels(Arrays.copyOfRange(pixels, iz * sliceSize, (iz + 1) * sliceSize), iz + 1);
             }
 
             // apply filter
@@ -129,7 +132,7 @@ public class WholeImageFilterWriteDB {
                         "Values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 PreparedStatement ps = conn.prepareStatement(sqlInsertPix);
                 int i = 1;
-                ps.setInt(i++, 2); // hard code image_id = 2, just for testing
+                ps.setInt(i++, image_id); // hard code image_id = 2, just for testing
                 ps.setString(i++, path[path.length - 1].split(".jpg")[0]);
                 ps.setInt(i++, 1); // filter should always be applied to zoom out level 1, i.e., original images
                 ps.setInt(i++, x);
@@ -165,15 +168,21 @@ public class WholeImageFilterWriteDB {
     }//SequenceImageFilterMapper close
 
     public static void main(String[] args) throws Exception {
-        Configuration conf = new Configuration();
         double sigmaX = Double.parseDouble(args[2]);
         double sigmaY = Double.parseDouble(args[3]);
         double sigmaZ = Double.parseDouble(args[4]);
+        String jdbcURL = args[5];
+        int image_id = Integer.parseInt(args[6]);
+        String image_name = args[7];
+
+        Configuration conf = new Configuration();
         conf.setDouble("sigmax", sigmaX);
         conf.setDouble("sigmay", sigmaY);
         conf.setDouble("sigmaz", sigmaZ);
-        Job job = Job.getInstance(conf, "WholeImageFilterWriteDB");
-        job.setJarByClass(WholeImageFilterWriteDB.class);
+        conf.set("jdbcURL", jdbcURL);
+        conf.setInt("imageID", image_id);
+        Job job = Job.getInstance(conf, "WholeImage-IJ_gaussian-WriteDB");
+        job.setJarByClass(WholeImageIJgaussianWriteDB.class);
 
         job.setMapperClass(WholeImageFilterMapper.class);
         job.setNumReduceTasks(0);
@@ -187,9 +196,24 @@ public class WholeImageFilterWriteDB {
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        job.waitForCompletion(true);
 
-        //close of driver class
+        // write an entry to the image table in nctracer.db
+        try {
+            Connection conn = DriverManager.getConnection(jdbcURL);
+            System.out.println(" conn: " + conn.toString());
+            String sqlInsertPix = "insert into image (id, name) Values (?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sqlInsertPix);
+            ps.setInt(1, image_id);
+            ps.setString(2, image_name);
+            ps.executeUpdate();
+            System.out.println("Complete writing an entry into image table.");
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 
 }

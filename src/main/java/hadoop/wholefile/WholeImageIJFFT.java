@@ -2,9 +2,6 @@ package hadoop.wholefile;
 
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.plugin.FFT;
-import ij.plugin.GaussianBlur3D;
-import ij.plugin.filter.FFTFilter;
 import ij.process.ImageProcessor;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -29,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-public class WholeImageImageJFFT {
+public class WholeImageIJFFT {
 
     public static class WholeImageFilterMapper extends
             Mapper<NullWritable, BytesWritable, Text, BytesWritable> {
@@ -138,7 +135,7 @@ public class WholeImageImageJFFT {
         double largeDia = Double.parseDouble(args[2]);
         conf.setDouble("largeDia", largeDia);
         Job job = Job.getInstance(conf, "WholeImageFilterImageJ");
-        job.setJarByClass(WholeImageImageJFFT.class);
+        job.setJarByClass(WholeImageIJFFT.class);
 
         job.setMapperClass(WholeImageFilterMapper.class);
         job.setNumReduceTasks(0);
