@@ -17,12 +17,12 @@ import java.util.Arrays;
 public class ImageJthresholderFilterTest  {
 
     public static void applyTo3D() throws Exception {
-//        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
-        String path = "./testData/original-subimage-last3slices.jpg";
+        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
+//        String path = "./testData/original-subimage-last3slices.jpg";
         BufferedImage bufImg = ImageIO.read(new File(path));
 
         // convert to 3D
-        int xDim = 128, yDim = 128, zDim = 3;
+        int xDim = 128, yDim = 128, zDim = 64;
         int sliceSize = xDim * yDim;
         byte[] pixels = ((DataBufferByte) bufImg.getRaster().getDataBuffer()).getData();
         System.out.println(" obtained pixels from buffered image");
@@ -42,9 +42,9 @@ public class ImageJthresholderFilterTest  {
         for (int slice = 1; slice <= zDim; slice++) {
             /* https://stackoverflow.com/questions/30981006/imagej-plugin-java-auto-threshold-method-doesnt-work */
             imgPlus.setSlice(slice);
-            IJ.setAutoThreshold(imgPlus, "Triangle dark");
-            //Prefs.blackBackground = true;
-            //IJ.run(imgPlus, "Convert to Mask", "only"); //
+            IJ.setAutoThreshold(imgPlus, "Huang dark");
+//            Prefs.blackBackground = true;
+//            IJ.run(imgPlus, "Convert to Mask", "only"); //
             IJ.run(imgPlus, "Threshold", "only");
         }
 

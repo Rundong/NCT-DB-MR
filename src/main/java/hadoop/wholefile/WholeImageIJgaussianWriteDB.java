@@ -198,7 +198,7 @@ public class WholeImageIJgaussianWriteDB {
 
         job.waitForCompletion(true);
 
-        // write an entry to the image table in nctracer.db
+        /*// write an entry to the image table in nctracer.db
         try {
             Connection conn = DriverManager.getConnection(jdbcURL);
             System.out.println(" conn: " + conn.toString());
@@ -213,7 +213,7 @@ public class WholeImageIJgaussianWriteDB {
             }
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
-        }
+        }*/
     }
 
 }

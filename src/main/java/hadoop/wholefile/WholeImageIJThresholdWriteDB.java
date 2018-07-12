@@ -45,7 +45,7 @@ public class WholeImageIJThresholdWriteDB {
         protected void setup(Context c) {
             //System.out.println("mapper setup");
             image_id = c.getConfiguration().getInt("imageID", -1);
-            method = c.getConfiguration().get("method", "Default");
+            method = c.getConfiguration().get("method", "Default") + " dark";
 
             // obtain the file path
             String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
@@ -204,23 +204,6 @@ public class WholeImageIJThresholdWriteDB {
         FileOutputFormat.setOutputPath(job, new Path(extraArgs[1]));
 
         job.waitForCompletion(true);
-
-        // write an entry to the image table in nctracer.db
-        try {
-            Connection conn = DriverManager.getConnection(jdbcURL);
-            System.out.println(" conn: " + conn.toString());
-            String sqlInsertPix = "insert into image (id, name) Values (?, ?)";
-            PreparedStatement ps = conn.prepareStatement(sqlInsertPix);
-            ps.setInt(1, image_id);
-            ps.setString(2, image_name);
-            ps.executeUpdate();
-            System.out.println("Complete writing an entry into image table.");
-            if (conn != null) {
-                conn.close();
-            }
-        } catch (SQLException ex) {
-            System.out.println(ex.getMessage());
-        }
     }
 
 }
