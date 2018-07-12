@@ -1,8 +1,8 @@
 package hadoop.wholefile;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.plugin.GaussianBlur3D;
 import ij.process.ImageProcessor;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -31,27 +31,21 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
 
-public class WholeImageIJFFTWriteDB {
+public class WholeImageIJThresholdWriteDB {
 
     public static class WholeImageFilterMapper extends
             Mapper<NullWritable, BytesWritable, NullWritable, NullWritable> {
 
-        private ImageJfftFilter fftFilter;
         private Text fileNameKey;
         Connection conn = null;
         private int image_id;
+        private String method;
 
         @Override
         protected void setup(Context c) {
             //System.out.println("mapper setup");
-            fftFilter = new ImageJfftFilter();
-            ImageJfftFilter.filterLargeDia = c.getConfiguration().getDouble("largeDia", 40.1);
-            ImageJfftFilter.filterSmallDia = c.getConfiguration().getDouble("smallDia", 3.0);
-            ImageJfftFilter.choiceDia = c.getConfiguration().get("choiceDia", "None");
-            ImageJfftFilter.toleranceDia = c.getConfiguration().getDouble("toleranceDia", 5.0);
-            ImageJfftFilter.doScalingDia = c.getConfiguration().getBoolean("doScalingDia", true);
-            ImageJfftFilter.saturateDia = c.getConfiguration().getBoolean("saturateDia", true);
-            image_id = c.getConfiguration().getInt("imageID", 99);
+            image_id = c.getConfiguration().getInt("imageID", -1);
+            method = c.getConfiguration().get("method", "Default");
 
             // obtain the file path
             String filePathString = ((FileSplit) c.getInputSplit()).getPath().toString();
@@ -108,14 +102,16 @@ public class WholeImageIJFFTWriteDB {
             for (int iz = 0; iz < zDim; iz++) {
                 imgStack.setPixels(Arrays.copyOfRange(pixels, iz * sliceSize, (iz + 1) * sliceSize), iz + 1);
             }
+            ImagePlus imgPlus = new ImagePlus("pix", imgStack);
 
             // apply filter
-            ImagePlus imgPlus = new ImagePlus("pix", imgStack);
-            fftFilter.setup("FFT-arg", imgPlus);
             for (int slice = 1; slice <= zDim; slice++) {
+                /* https://stackoverflow.com/questions/30981006/imagej-plugin-java-auto-threshold-method-doesnt-work */
                 imgPlus.setSlice(slice);
-                ImageProcessor ip = imgPlus.getProcessor();
-                fftFilter.run(ip);
+                IJ.setAutoThreshold(imgPlus, method);
+                //Prefs.blackBackground = true;
+                //IJ.run(imgPlus, "Convert to Mask", "only"); //
+                IJ.run(imgPlus, "Threshold", "only");
             }
             //System.out.println(" done filtering");
 
@@ -180,25 +176,20 @@ public class WholeImageIJFFTWriteDB {
     public static void main(String[] args) throws Exception {
         Configuration conf = new Configuration();
         String extraArgs[] = new GenericOptionsParser(conf, args).getRemainingArgs();
-        if (extraArgs.length < 11) {
-            System.out.println("There should be 6 filter parameters and 3 database arguments.");
+        if (extraArgs.length < 6) {
+            System.out.println("Usage: <int> <out> <(threshold) method> <image_id> <image_name> <jdbc url>");
             System.exit(-1);
         }
-        conf.setDouble("largeDia", Double.parseDouble(args[2]));
-        conf.setDouble("smallDia", Double.parseDouble(args[3]));
-        conf.set("choiceDia", args[4]);
-        conf.setDouble("toleranceDia", Double.parseDouble(args[5]));
-        conf.setBoolean("doScalingDia", Boolean.parseBoolean(args[6]));
-        conf.setBoolean("saturateDia", Boolean.parseBoolean(args[7]));
-        int image_id = Integer.parseInt(args[8]);
-        String image_name = args[9];
-        String jdbcURL = args[10];
+        conf.set("method", extraArgs[2]);
+        int image_id = Integer.parseInt(extraArgs[3]);
+        String image_name = extraArgs[4];
+        String jdbcURL = extraArgs[5];
         conf.setInt("imageID", image_id);
         conf.set("imageName", image_name);
         conf.set("jdbcURL", jdbcURL);
 
-        Job job = Job.getInstance(conf, "WholeImage-IJ_FFT-WriteDB");
-        job.setJarByClass(WholeImageIJFFTWriteDB.class);
+        Job job = Job.getInstance(conf, "WholeImage-IJ_Threshold-WriteDB");
+        job.setJarByClass(WholeImageIJThresholdWriteDB.class);
 
         job.setMapperClass(WholeImageFilterMapper.class);
         job.setNumReduceTasks(0);
@@ -209,8 +200,8 @@ public class WholeImageIJFFTWriteDB {
         job.setInputFormatClass(WholeFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        FileInputFormat.addInputPath(job, new Path(args[0]));
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        FileInputFormat.addInputPath(job, new Path(extraArgs[0]));
+        FileOutputFormat.setOutputPath(job, new Path(extraArgs[1]));
 
         job.waitForCompletion(true);
 

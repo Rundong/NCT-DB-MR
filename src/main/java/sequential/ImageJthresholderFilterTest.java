@@ -14,28 +14,7 @@ import java.awt.image.*;
 import java.io.File;
 import java.util.Arrays;
 
-public class ImageJthresholderFilterTest extends JPanel  {
-
-    BufferedImage image;
-    Dimension size = new Dimension();
-
-    public ImageJthresholderFilterTest(BufferedImage image) {
-        this.image = image;
-        size.setSize(image.getWidth(), image.getHeight());
-    }
-
-    /**
-     * Drawing an image can allow for more
-     * flexibility in processing/editing.
-     */
-    protected void paintComponent(Graphics g) {
-        // Center image in this component.
-        int x = (getWidth() - size.width)/2;
-        int y = (getHeight() - size.height)/2;
-        g.drawImage(image, x, y, this);
-    }
-
-    public Dimension getPreferredSize() { return size; }
+public class ImageJthresholderFilterTest  {
 
     public static void applyTo3D() throws Exception {
 //        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
@@ -58,11 +37,16 @@ public class ImageJthresholderFilterTest extends JPanel  {
 //        ij.process.ImageStatistics.getStatistics(ip);
 //        ij.plugin.Thresholder thresholder = new ij.plugin.Thresholder();
 //        thresholder.run();
-        IJ.run(imgPlus, "HSB Stack", "");
-        imgPlus.setSlice(2);
-        IJ.setAutoThreshold(imgPlus, "Triangle dark");
-        Prefs.blackBackground = true;
-        IJ.run(imgPlus, "Convert to Mask", "only");
+
+        //IJ.run(imgPlus, "HSB Stack", "");
+        for (int slice = 1; slice <= zDim; slice++) {
+            /* https://stackoverflow.com/questions/30981006/imagej-plugin-java-auto-threshold-method-doesnt-work */
+            imgPlus.setSlice(slice);
+            IJ.setAutoThreshold(imgPlus, "Triangle dark");
+            //Prefs.blackBackground = true;
+            //IJ.run(imgPlus, "Convert to Mask", "only"); //
+            IJ.run(imgPlus, "Threshold", "only");
+        }
 
         // convert 3D array into 1D array
         byte[] pixRes = new byte[zDim * sliceSize];
@@ -95,14 +79,6 @@ public class ImageJthresholderFilterTest extends JPanel  {
 
     public static void main(String[] args) throws Exception {
         applyTo3D();
-//        applyTo2D();
-
-//        // crop and save original image
-//        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
-//        BufferedImage bufImg = ImageIO.read(new File(path));
-//        bufImg = bufImg.getSubimage(0, 7808, 128, 256);
-//        File outputOriginal = new File("./testData/original-subimage-last2slices.jpg");
-//        ImageIO.write(bufImg, "jpg", outputOriginal);
     }
 
 }
