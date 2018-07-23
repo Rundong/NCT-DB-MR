@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="javabuilder">
+    <CLASSES>
+      <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/toolbox/javabuilder/jar/javabuilder.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

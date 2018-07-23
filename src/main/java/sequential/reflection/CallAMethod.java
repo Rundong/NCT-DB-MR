@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 
+@Deprecated
 public class CallAMethod {
 
     public static Object parseFromString(String str, Class theClass) {
