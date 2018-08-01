@@ -11,6 +11,7 @@ import java.io.File;
 
 public class Gaussian3dT_Test {
     public static void applyTo3D() throws Exception {
+        double[] sigmas = new double[]{2.0, 1.0, 3.0};
 //        String path = "/Users/RundongL/MyWorkStack/repos/NCtracerWeb/NCT-Batch/plugins/image-filter/jpeg-subset/256-384_896-1024_0-64.jpg";
         String path = "./testData/original-subimage-last3slices.jpg";
         BufferedImage bufImg = ImageIO.read(new File(path));
@@ -20,20 +21,25 @@ public class Gaussian3dT_Test {
         int sliceSize = xDim * yDim;
         byte[] pixels = ((DataBufferByte) bufImg.getRaster().getDataBuffer()).getData();
         System.out.println(" obtained pixels from buffered image");
-//        ImageStack imgStack = new ImageStack(xDim, yDim, zDim);
-//        for (int iz = 1; iz <= zDim; iz++) {
-//            imgStack.setPixels(Arrays.copyOfRange(pixels, (iz-1) * sliceSize, (iz) * sliceSize), iz);
-//        }
-//
+
+        /*byte[][][] pix3d = new byte[zDim][xDim][yDim];
+        for(int iz = 0; iz < zDim; iz++) {
+            for(int iy = 0; iy < yDim; iy++) {
+                System.arraycopy(pixels, iz * sliceSize + iy * xDim, pix3d[iz][iy], 0, xDim);
+            }
+        }
+        MWNumericArray mwPixels = MWNumericArray.newInstance(new int[]{xDim, yDim, zDim}, pix3d, MWClassID.UINT8);*/
+
         // prepare the image and the filter paramters
-        byte initByte = 0;
-        MWNumericArray mwPixels = new MWNumericArray(new int[]{xDim, yDim, zDim}, pixels, MWClassID.UINT8);
-        double sigma = 3.0;
+        MWNumericArray mwPixels = MWNumericArray.newInstance(new int[]{xDim, yDim, zDim}, pixels, MWClassID.UINT8);
+        MWNumericArray mwSigmas = MWNumericArray.newInstance(new int[]{3}, sigmas, MWClassID.DOUBLE);
 
         Class1 gaussian3dT = new Class1();
-        byte[] pixRes = new byte[zDim * sliceSize];
         MWNumericArray mwPixelsResult = new MWNumericArray(new int[]{xDim, yDim, zDim}, MWClassID.UINT8);
-        gaussian3dT.Gaussian3dT(new Object[]{mwPixelsResult}, new Object[]{mwPixels, sigma}); // todo: exception
+        gaussian3dT.Gaussian3dT(new Object[]{mwPixelsResult}, new Object[]{mwPixels, mwSigmas}); // todo: exception
+        byte[] pixRes = (byte[])mwPixelsResult.toByteArray();
+//        Object[] matlabResult = gaussian3dT.Gaussian3dT(1, mwPixels, mwSigmas);
+//        byte[] pixRes = (byte[])matlabResult[0];
 
         // convert filtered 3D image to 2D image
         DataBuffer buffer = new DataBufferByte(pixRes, pixRes.length);
@@ -46,8 +52,13 @@ public class Gaussian3dT_Test {
         System.out.println(" done constructing buffered image result");
 
         // save image
-        File outputfile = new File("./testData/myfft-result-last3slices.jpg");
+        File outputfile = new File("./testData/Matlab-Gaussian3dT.jpg");
         ImageIO.write(bufImgRes, "jpg", outputfile);
+
+        // Free native resources
+        MWArray.disposeArray(mwPixels);
+        //MWArray.disposeArray(matlabResult);
+        gaussian3dT.dispose();
     }
 
     public static void main(String[] args) throws Exception {
