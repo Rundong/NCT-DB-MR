@@ -4,7 +4,7 @@
     <output-test url="file://$MODULE_DIR$/../../out/test/classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/../../src/test" />
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="MRnctracerdb_main" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-common:2.8.4" level="project" />

@@ -2,6 +2,8 @@
   <library name="javabuilder">
     <CLASSES>
       <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/toolbox/javabuilder/jar/javabuilder.jar!/" />
+      <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/java/jarext/gluegen-rt.jar!/" />
+      <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/java/jarext/jogl-all.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
