@@ -7,6 +7,15 @@
     <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="MRnctracerdb_main" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar:///home/rundongli/LabWork/nctracer-related/ImageJ/ij.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-common:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: org.apache.hadoop:hadoop-mapreduce-client-jobclient:2.8.4" level="project" />
     <orderEntry type="library" name="Gradle: net.imagej:ij:1.52d" level="project" />

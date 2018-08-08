@@ -9,10 +9,12 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
 import org.sqlite.JDBC;
 
 import javax.imageio.ImageIO;
@@ -21,11 +23,13 @@ import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Map;
 
 public class WholeImageMatlabGaussianWriteDB {
 
@@ -162,6 +166,9 @@ public class WholeImageMatlabGaussianWriteDB {
     }//SequenceImageFilterMapper close
 
     public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        GenericOptionsParser parser = new GenericOptionsParser(conf, args);
+        args = parser.getRemainingArgs();
         double sigmaX = Double.parseDouble(args[2]);
         double sigmaY = Double.parseDouble(args[3]);
         double sigmaZ = Double.parseDouble(args[4]);
@@ -169,7 +176,6 @@ public class WholeImageMatlabGaussianWriteDB {
         int image_id = Integer.parseInt(args[6]);
         String image_name = args[7];
 
-        Configuration conf = new Configuration();
         conf.setDouble("sigmax", sigmaX);
         conf.setDouble("sigmay", sigmaY);
         conf.setDouble("sigmaz", sigmaZ);
@@ -192,7 +198,7 @@ public class WholeImageMatlabGaussianWriteDB {
 
         job.waitForCompletion(true);
 
-        /*// write an entry to the image table in nctracer.db
+        // write an entry to the image table in nctracer.db
         try {
             Connection conn = DriverManager.getConnection(jdbcURL);
             System.out.println(" conn: " + conn.toString());
@@ -207,7 +213,7 @@ public class WholeImageMatlabGaussianWriteDB {
             }
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
-        }*/
+        }
     }
 
 }
