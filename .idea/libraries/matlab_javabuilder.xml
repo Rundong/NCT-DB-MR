@@ -1,9 +1,12 @@
 <component name="libraryTable">
-  <library name="javabuilder">
+  <library name="matlab-javabuilder">
     <CLASSES>
       <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/toolbox/javabuilder/jar/javabuilder.jar!/" />
       <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/java/jarext/gluegen-rt.jar!/" />
       <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/java/jarext/jogl-all.jar!/" />
+      <root url="jar://$PROJECT_DIR$/matlab-jars/Gaussian3dT_Aug1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/matlab-jars/registeration_new2.jar!/" />
+      <root url="jar://$USER_HOME$/Downloads/NCTracer-MATLAB-plugin/initracer/initracer.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
