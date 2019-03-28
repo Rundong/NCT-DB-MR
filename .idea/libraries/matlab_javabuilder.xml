@@ -6,7 +6,7 @@
       <root url="jar:///Applications/MATLAB/MATLAB_Runtime/v93/java/jarext/jogl-all.jar!/" />
       <root url="jar://$PROJECT_DIR$/matlab-jars/Gaussian3dT_Aug1.jar!/" />
       <root url="jar://$PROJECT_DIR$/matlab-jars/registeration_new2.jar!/" />
-      <root url="jar://$USER_HOME$/Downloads/NCTracer-MATLAB-plugin/initracer/initracer.jar!/" />
+      <root url="jar://$PROJECT_DIR$/matlab-jars/initracer-Aug30.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
