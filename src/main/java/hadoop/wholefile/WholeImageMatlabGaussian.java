@@ -38,7 +38,6 @@ public class WholeImageMatlabGaussian {
 
         private double sigmaX, sigmaY, sigmaZ;
         private Text fileNameKey;
-        Connection conn = null;
 
         @Override
         protected void setup(Context c) {
@@ -113,18 +112,6 @@ public class WholeImageMatlabGaussian {
 
         }//map function close
 
-        @Override
-        protected void cleanup(Context c) {
-            try {
-                System.out.println(" conn: " + conn.toString());
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ex) {
-                System.out.println(ex.getMessage());
-            }
-        }
-
     }//SequenceImageFilterMapper close
 
     public static void main(String[] args) throws Exception {
@@ -147,7 +134,7 @@ public class WholeImageMatlabGaussian {
         job.setMapOutputKeyClass(NullWritable.class);
         job.setMapOutputValueClass(BytesWritable.class);
         job.setOutputKeyClass(NullWritable.class);
-        job.setOutputValueClass(BytesWritable.class);
+        job.setOutputValueClass(NullWritable.class);
 
         job.setInputFormatClass(WholeFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
