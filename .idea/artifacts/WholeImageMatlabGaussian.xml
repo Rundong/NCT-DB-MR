@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="WholeImageMatlabGaussian">
+    <output-path>$PROJECT_DIR$/out/artifacts/WholeImageMatlabGaussian</output-path>
+    <root id="archive" name="WholeImageMatlabGaussian.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/out/mf-WholeImageMatlabGaussian/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="MRnctracerdb_main" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/matlab-jars/Gaussian3dT_Aug1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="/Applications/MATLAB/MATLAB_Runtime/v93/toolbox/javabuilder/jar/javabuilder.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
