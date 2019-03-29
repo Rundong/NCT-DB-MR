@@ -22,9 +22,7 @@ import org.sqlite.JDBC;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -108,6 +106,16 @@ public class WholeImageMatlabGaussian {
 
             context.write(NullWritable.get(), new BytesWritable(pixRes));
 
+//            BufferedImage resImg = ImageIO.read(new ByteArrayInputStream(pixRes));
+//            System.out.println(" -- resImg obtained: ");
+//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//            ImageIO.write(resImg, "jpg", baos);
+//            baos.flush();
+//            System.out.println(" -- write jpg byte array to ByteArrayOutputStream");
+//            byte[] resBytes = baos.toByteArray();
+//            System.out.println(" -- get the jpg byte array");
+//            context.write(NullWritable.get(), new BytesWritable(resBytes));
+
             System.out.println(" one image written.");
 
         }//map function close
@@ -131,16 +139,15 @@ public class WholeImageMatlabGaussian {
         job.setMapperClass(WholeImageFilterMapper.class);
         job.setNumReduceTasks(0);
 
-        job.setMapOutputKeyClass(NullWritable.class);
-        job.setMapOutputValueClass(BytesWritable.class);
         job.setOutputKeyClass(NullWritable.class);
-        job.setOutputValueClass(NullWritable.class);
+        job.setOutputValueClass(BytesWritable.class);
 
         job.setInputFormatClass(WholeFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        //FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        SequenceFileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         job.waitForCompletion(true);
     }
